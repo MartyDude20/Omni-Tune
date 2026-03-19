@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs (Electron/Vite)
+omni-profile-editor/build/
+omni-profile-editor/dist/
+omni-profile-editor/out/
+
+# C++ / CMake build artifacts
+omni-profile-editor/vr-helper/build/
+omni-profile-editor/vr-helper/openvr/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db

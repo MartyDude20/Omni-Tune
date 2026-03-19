@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* Theme CSS variable defaults (Midnight Blue — overridden at runtime) */
+:root {
+  --bg:       #080c18;
+  --surface:  #0d1225;
+  --input:    #121930;
+  --border:   #1f2d52;
+  --icon:     #2d4080;
+  --muted:    #3a4d7a;
+  --text2:    #7b92c8;
+  --text:     #ffffff;
+  --accent:   #4d7cfe;
+  --accent-h: #7aa0ff;
+  --accent-b: #0a1a45;
+  --accent-t: #93b4ff;
+  --glow:     rgba(77,124,254,0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--glow);
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--accent-h);
+  box-shadow: 0 0 14px var(--glow);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
