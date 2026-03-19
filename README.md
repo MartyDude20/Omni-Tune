@@ -2,6 +2,8 @@
 
 A desktop app for editing Virtuix Omni One VR treadmill game profiles — with a live SteamVR overlay so you can tune while you walk.
 
+**New user? See the [User Guide](TUTORIAL.md).**
+
 ## What It Does
 
 The Virtuix driver reads plain-text profile files to control how walking motion maps to in-game movement. Before this, tuning meant editing text files blind, restarting, and guessing. OmniTune gives you sliders, live preview, and a SteamVR dashboard overlay.
