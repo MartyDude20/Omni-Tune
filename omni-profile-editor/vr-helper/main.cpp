@@ -166,6 +166,19 @@ int main(int argc, char* argv[]) {
 
     write_status("ready", nullptr);
 
+    // Emit current scene app if one is already running when helper starts
+    {
+        uint32_t pid = vr::VRApplications()->GetCurrentSceneProcessId();
+        if (pid != 0) {
+            char key[256] = {};
+            vr::VRApplications()->GetApplicationKeyByProcessId(pid, key, sizeof(key));
+            std::string k(key);
+            if (k.size() > 10 && k.substr(0, 10) == "steam.app.") {
+                write_app_changed(k.substr(10).c_str());
+            }
+        }
+    }
+
     // Start event poller thread
     std::thread poller(event_thread, mainHandle);
 

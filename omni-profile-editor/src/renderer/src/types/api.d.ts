@@ -65,9 +65,15 @@ declare global {
       onVrStatus:     (cb: (payload: VrStatusPayload) => void)      => () => void
       onVrAppChanged: (cb: (payload: VrAppPayload) => void)         => () => void
 
-      getAutoStart:  ()                    => Promise<boolean>
-      setAutoStart:  (enabled: boolean)   => Promise<void>
-      openExternal:  (url: string)        => Promise<void>
+      getAutoStart:      ()                => Promise<boolean>
+      setAutoStart:      (enabled: boolean) => Promise<void>
+      openExternal:      (url: string)     => Promise<void>
+      getFirstRun:       ()                => Promise<boolean>
+      completeFirstRun:  ()                => Promise<void>
+      checkOmniConnect:  ()                => Promise<boolean>
+      checkSteamVr:      ()                => Promise<boolean>
+      getWhatsNew:       ()  => Promise<{ version: string; notes: string[] } | null>
+      dismissWhatsNew:   ()  => Promise<void>
     }
   }
 }

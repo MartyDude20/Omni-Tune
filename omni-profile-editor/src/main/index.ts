@@ -1,12 +1,15 @@
-import { app, BrowserWindow, shell, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, shell, Tray, Menu, nativeImage, dialog } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipcHandlers'
 import { startAutoConnect } from './vrOverlay'
+import { autoUpdater } from 'electron-updater'
 
 let tray: Tray | null = null
 
 function createTray(win: BrowserWindow): void {
-  const iconPath = join(app.getAppPath(), 'resources', 'Logo16.png')
+  const iconPath = app.isPackaged
+    ? join(process.resourcesPath, 'Logo16.png')
+    : join(app.getAppPath(), 'resources', 'Logo16.png')
   const icon = nativeImage.createFromPath(iconPath)
   tray = new Tray(icon)
   tray.setToolTip('OmniTune')
@@ -23,7 +26,9 @@ function createWindow(): void {
     width: 1200,
     height: 750,
     show: false,
-    icon: join(app.getAppPath(), 'resources', 'Logo256.png'),
+    icon: app.isPackaged
+      ? join(process.resourcesPath, 'Logo256.png')
+      : join(app.getAppPath(), 'resources', 'Logo256.png'),
     titleBarStyle: 'hidden',
     titleBarOverlay: {
       color: '#080c18',
@@ -71,6 +76,22 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates().catch(() => {})
+    autoUpdater.on('update-downloaded', () => {
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Update Ready',
+        message: 'A new version of OmniTune has been downloaded.',
+        detail: 'Restart now to install the update.',
+        buttons: ['Restart Now', 'Later'],
+        defaultId: 0,
+      }).then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall()
+      }).catch(() => {})
+    })
+  }
 })
 
 app.on('window-all-closed', () => {

@@ -12,8 +12,34 @@ import {
   Profile,
 } from './profileManager'
 import { stopVr, reconnectVr, setOverlayWidth } from './vrOverlay'
+import { readPrefs, writePrefs } from './prefs'
+import { isOmniConnectInstalled } from './profileManager'
+import { checkSteamVr } from './vrOverlay'
+
+const WHATS_NEW: Record<string, string[]> = {
+  '1.0.1': [
+    'Fixed: Switching games now prompts if you have unsaved changes',
+    'Fixed: Parameter number inputs are clamped to valid ranges',
+    'Fixed: Auto-save no longer saves the wrong game when switching quickly',
+    'Fixed: Reset button asks for confirmation before wiping changes',
+    'Fixed: Tray and window icons now load correctly in installed builds',
+    'Fixed: VR on/off preference is remembered across app restarts',
+    'Fixed: PowerShell windows no longer flash when checking Steam or SteamVR',
+    'Added: Drag-and-drop .txt import onto the profile editor',
+    'Added: First-run setup wizard',
+    'Added: NSIS installer with desktop shortcut and uninstaller',
+    'Added: Auto-updater notifies when a new version is ready',
+    'Added: Helpful message when OmniConnect is not installed',
+    'Added: Overlay correctly loads the running game when started mid-session',
+  ],
+}
+
+let registered = false
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
+  if (registered) return
+  registered = true
+
   ipcMain.handle('profiles:scan', () => scanProfiles())
 
   ipcMain.handle('profiles:load', (_, appId: string) => loadProfileForAppId(appId))
@@ -62,6 +88,23 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
   ipcMain.handle('app:openExternal', (_, { url }: { url: string }) => {
     shell.openExternal(url)
+  })
+
+  ipcMain.handle('app:getFirstRun', () => readPrefs().firstRun)
+  ipcMain.handle('app:completeFirstRun', () => writePrefs({ firstRun: false }))
+  ipcMain.handle('app:checkOmniConnect', () => isOmniConnectInstalled())
+  ipcMain.handle('app:checkSteamVr', () => new Promise<boolean>(resolve => checkSteamVr(resolve)))
+
+  ipcMain.handle('app:getWhatsNew', () => {
+    const prefs = readPrefs()
+    const current = app.getVersion()
+    if (prefs.lastSeenVersion === current) return null
+    const notes = WHATS_NEW[current] ?? null
+    return notes ? { version: current, notes } : null
+  })
+
+  ipcMain.handle('app:dismissWhatsNew', () => {
+    writePrefs({ lastSeenVersion: app.getVersion() })
   })
 
   // Live param sync — relay to every window except the sender (zero-latency, no disk round-trip)

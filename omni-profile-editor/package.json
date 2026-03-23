@@ -1,16 +1,17 @@
 {
   "name": "omnitune",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Virtuix Omni One game profile tuner",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "node scripts/run.js dev",
-    "build": "node scripts/run.js build && electron-builder --dir",
+    "build": "node scripts/run.js build && electron-builder",
     "pack": "node scripts/run.js build && electron-builder --dir",
     "preview": "node scripts/run.js preview"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
+    "electron-updater": "^6.8.3",
     "jszip": "^3.10.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
@@ -35,9 +36,34 @@
     "productName": "OmniTune",
     "icon": "resources/icon.png",
     "asar": false,
+    "publish": {
+      "provider": "github",
+      "owner": "MartyDude20",
+      "repo": "Omni-Tune"
+    },
     "win": {
-      "target": "zip",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "signingHashAlgorithms": []
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "OmniTune"
     },
     "extraResources": [
       {

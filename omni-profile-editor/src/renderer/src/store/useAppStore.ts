@@ -99,6 +99,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   selectGame: async (appId) => {
+    const { isDirty, selectedAppId } = get()
+    if (isDirty && selectedAppId && selectedAppId !== appId) {
+      if (!window.confirm('You have unsaved changes. Discard them?')) return
+    }
     const entry = await window.api.loadProfile(appId)
     const next = pushRecentlyEdited(appId)
     set({
@@ -124,9 +128,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       future: [],
     })
     if (selectedAppId) window.api.sendLiveUpdate(selectedAppId, updated)
-    if (autoSave) {
+    if (autoSave && selectedAppId) {
       if (autoSaveTimer) clearTimeout(autoSaveTimer)
-      autoSaveTimer = setTimeout(() => get().save(), 500)
+      const capturedId = selectedAppId
+      const capturedProfile = updated
+      autoSaveTimer = setTimeout(async () => {
+        if (get().selectedAppId !== capturedId) return
+        await window.api.saveProfile(capturedId, capturedProfile)
+        if (get().selectedAppId === capturedId) set({ isDirty: false })
+      }, 500)
     }
   },
 
@@ -141,9 +151,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       future: [],
     })
     if (selectedAppId) window.api.sendLiveUpdate(selectedAppId, updated)
-    if (autoSave) {
+    if (autoSave && selectedAppId) {
       if (autoSaveTimer) clearTimeout(autoSaveTimer)
-      autoSaveTimer = setTimeout(() => get().save(), 500)
+      const capturedId = selectedAppId
+      const capturedProfile = updated
+      autoSaveTimer = setTimeout(async () => {
+        if (get().selectedAppId !== capturedId) return
+        await window.api.saveProfile(capturedId, capturedProfile)
+        if (get().selectedAppId === capturedId) set({ isDirty: false })
+      }, 500)
     }
   },
 
@@ -227,7 +243,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setOverlayWidth: (meters) => {
     lsSet('overlayWidth', meters)
     set({ overlayWidth: meters })
-    window.api.vrSetWidth(meters)
+    if (get().vrStatus === 'active') window.api.vrSetWidth(meters)
   },
 
   toggleFav: (appId) => {

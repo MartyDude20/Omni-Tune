@@ -20,6 +20,7 @@ export default function ProfileEditor(): JSX.Element {
   const [copySearch, setCopySearch] = useState('')
   const [showNotes, setShowNotes] = useState(false)
   const [showCurve, setShowCurve] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   if (!selectedAppId || !editedProfile || !officialProfile) {
     return (
@@ -45,8 +46,9 @@ export default function ProfileEditor(): JSX.Element {
     const filePath = await window.api.openFileDialog({ filters: [{ name: 'Profile', extensions: ['txt'] }] })
     if (!filePath) return
     const result = await window.api.importProfile(filePath)
-    if (result.appId === null) { setPendingImport({ profile: result.profile }); setImportModal(true) }
-    else { for (const k of Object.keys(result.profile) as (keyof Profile)[]) { if (k !== 'game') updateParam(k, result.profile[k] as number) } }
+    for (const k of Object.keys(result.profile) as (keyof Profile)[]) {
+      if (k !== 'game') updateParam(k, result.profile[k] as number)
+    }
   }
   async function handleImportConfirm(): Promise<void> {
     const appId = importAppId.trim()
@@ -63,6 +65,18 @@ export default function ProfileEditor(): JSX.Element {
     const p = await window.api.saveFileDialog({ filters: [{ name: 'ZIP Archive', extensions: ['zip'] }], defaultPath: 'omni-custom-profiles.zip' })
     if (p) await window.api.exportAll(p)
   }
+  async function handleDrop(e: React.DragEvent<HTMLDivElement>): Promise<void> {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (!file || !file.name.endsWith('.txt')) return
+    const filePath = (file as File & { path: string }).path
+    if (!filePath) return
+    const result = await window.api.importProfile(filePath)
+    for (const k of Object.keys(result.profile) as (keyof Profile)[]) {
+      if (k !== 'game') updateParam(k, result.profile[k] as number)
+    }
+  }
   async function handleDelete(): Promise<void> {
     if (!isCustom) return
     if (!window.confirm(`Delete custom profile for "${gameName}"? The official profile (if any) will be used instead.`)) return
@@ -74,7 +88,23 @@ export default function ProfileEditor(): JSX.Element {
   const ghostBtn: React.CSSProperties = { padding: '8px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: 'var(--surface)', color: 'var(--text2)', border: '1px solid var(--border)' }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)' }}>
+    <div
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg)', position: 'relative' }}
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+    >
+      {dragOver && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 10,
+          background: 'rgba(var(--accent-rgb, 99,102,241), 0.12)',
+          border: '2px dashed var(--accent)',
+          borderRadius: 12, pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent-t)' }}>Drop .txt to import</p>
+        </div>
+      )}
 
       {/* Game banner */}
       <div style={{ position: 'relative', height: 180, flexShrink: 0, overflow: 'hidden' }}>
@@ -108,7 +138,7 @@ export default function ProfileEditor(): JSX.Element {
               style={{ padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: `1px solid ${autoSave ? 'var(--accent)' : 'var(--border)'}`, background: autoSave ? 'var(--accent-b)' : 'var(--surface)', color: autoSave ? 'var(--accent-t)' : 'var(--text2)' }}>
               {autoSave ? '● Auto-save' : 'Auto-save'}
             </button>
-            <button onClick={reset}
+            <button onClick={() => { if (window.confirm('Reset all parameters to the official values? This cannot be undone.')) reset() }}
               style={{ padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--icon)'; (e.currentTarget as HTMLElement).style.color = 'var(--text)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}>
@@ -214,7 +244,7 @@ export default function ProfileEditor(): JSX.Element {
                       )}
                       <input
                         type="number" value={value} min={min} max={max} step={step}
-                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParam(key as keyof Profile, v) }}
+                        onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParam(key as keyof Profile, Math.min(max, Math.max(min, v))) }}
                         style={{ width: 80, padding: '7px 10px', fontSize: 14, fontWeight: 600, textAlign: 'right', borderRadius: 8, background: 'var(--surface)', color: changed ? 'var(--accent-t)' : 'var(--text)', border: `1px solid ${changed ? 'var(--accent)' : 'var(--border)'}`, outline: 'none' }}
                       />
                     </div>

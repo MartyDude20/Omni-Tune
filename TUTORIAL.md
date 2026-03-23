@@ -56,14 +56,13 @@ If a game doesn't appear in your library, Virtuix hasn't shipped a default profi
 
 ## Presets
 
-The **Presets** row at the top of the editor lets you quickly apply a starting point:
+The **Presets** row at the top of the editor lets you save and reuse your own parameter combinations:
 
-- **Comfort** — conservative settings for slow, smooth walking
-- **Standard** — balanced defaults
-- **Sport** — faster, more responsive
-- (and others)
+1. Dial in a set of parameters you like.
+2. Click **+ Save as Preset** and give it a name.
+3. The preset appears as a chip — click it any time to apply those values, or × to delete it.
 
-You can also use **Copy from game…** to pull the exact parameter values from any other game in your library. Useful when a new game feels similar to one you've already dialed in.
+Use **Copy from game…** to pull the exact parameter values from any other game in your library. Useful when a new game feels similar to one you've already dialed in.
 
 ---
 
@@ -89,7 +88,7 @@ To stop the overlay, click **● In SteamVR — Stop** or close OmniTune.
 
 At the bottom of the editor:
 
-- **Import .txt** — load a profile file shared by someone else (or exported from another install). If the file doesn't contain a game ID, OmniTune will ask you which game to apply it to.
+- **Import .txt** — load a profile file shared by someone else (or exported from another install). The values are applied to the game currently open in the editor. You can also drag and drop a `.txt` file directly onto the editor.
 - **Export .txt** — save the current game's profile as a plain-text file you can share or back up.
 - **Export All (.zip)** — zip up all your custom profiles at once.
 

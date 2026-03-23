@@ -36,7 +36,13 @@ contextBridge.exposeInMainWorld('api', {
   onVrAppChanged: (cb: (payload: unknown) => void) => listen('vr:appChanged',    cb as (...a: unknown[]) => void),
 
   // app
-  getAutoStart:  ()                        => ipcRenderer.invoke('app:getAutoStart'),
-  setAutoStart:  (enabled: boolean)        => ipcRenderer.invoke('app:setAutoStart', { enabled }),
-  openExternal:  (url: string)             => ipcRenderer.invoke('app:openExternal', { url }),
+  getAutoStart:      ()                => ipcRenderer.invoke('app:getAutoStart'),
+  setAutoStart:      (enabled: boolean) => ipcRenderer.invoke('app:setAutoStart', { enabled }),
+  openExternal:      (url: string)     => ipcRenderer.invoke('app:openExternal', { url }),
+  getFirstRun:       ()                => ipcRenderer.invoke('app:getFirstRun'),
+  completeFirstRun:  ()                => ipcRenderer.invoke('app:completeFirstRun'),
+  checkOmniConnect:  ()                => ipcRenderer.invoke('app:checkOmniConnect'),
+  checkSteamVr:      ()                => ipcRenderer.invoke('app:checkSteamVr'),
+  getWhatsNew:       ()  => ipcRenderer.invoke('app:getWhatsNew'),
+  dismissWhatsNew:   ()  => ipcRenderer.invoke('app:dismissWhatsNew'),
 })

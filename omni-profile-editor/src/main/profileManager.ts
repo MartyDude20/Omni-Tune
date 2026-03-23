@@ -105,7 +105,7 @@ function getSteamInstallPath(): string | null {
   try {
     const out = execSync(
       'reg query "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam" /v InstallPath',
-      { encoding: 'utf-8', timeout: 3000 }
+      { encoding: 'utf-8', timeout: 3000, windowsHide: true }
     )
     const m = out.match(/InstallPath\s+REG_SZ\s+(.+)/)
     return m ? m[1].trim() : null
@@ -244,14 +244,14 @@ export function loadProfileForAppId(appId: string): ProfileEntry {
 const suppressSet = new Set<string>()
 
 export function saveCustomProfile(appId: string, p: Profile): void {
-  const dest = path.join(CUSTOM, `profile_${appId}.txt`)
+  const dest = path.normalize(path.join(CUSTOM, `profile_${appId}.txt`))
   suppressSet.add(dest)
   fs.mkdirSync(CUSTOM, { recursive: true })
   fs.writeFileSync(dest, serializeProfile(p))
 }
 
 export function resetProfile(appId: string): void {
-  const dest = path.join(CUSTOM, `profile_${appId}.txt`)
+  const dest = path.normalize(path.join(CUSTOM, `profile_${appId}.txt`))
   if (fs.existsSync(dest)) {
     suppressSet.add(dest)
     fs.unlinkSync(dest)
@@ -291,10 +291,13 @@ export function watchProfiles(onChange: (appId: string) => void): void {
   chokidar.watch([OFFICIAL, CUSTOM], { ignoreInitial: true }).on('all', (_, filePath) => {
     const normalized = path.normalize(filePath)
     if (suppressSet.has(normalized)) { suppressSet.delete(normalized); return }
-    if (suppressSet.has(filePath))   { suppressSet.delete(filePath);   return }
     const m = path.basename(filePath).match(/^profile_(\d+)\.txt$/)
     if (m) onChange(m[1])
   })
+}
+
+export function isOmniConnectInstalled(): boolean {
+  return fs.existsSync(BASE)
 }
 
 // Re-export for use in vrOverlay.ts

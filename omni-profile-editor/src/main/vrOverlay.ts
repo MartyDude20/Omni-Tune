@@ -3,6 +3,7 @@ import { spawn, exec, ChildProcess } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import { loadProfileForAppId } from './profileManager'
+import { readPrefs, writePrefs } from './prefs'
 
 const resourcesDir = app.isPackaged
   ? process.resourcesPath
@@ -20,8 +21,8 @@ let userStopped = false
 let savedMainWindow: BrowserWindow | null = null
 
 // ── SteamVR detection ──────────────────────────────────────────────────────
-function checkSteamVr(cb: (running: boolean) => void): void {
-  exec('tasklist /FI "IMAGENAME eq vrserver.exe" /FO CSV /NH', { timeout: 2000 }, (err, stdout) => {
+export function checkSteamVr(cb: (running: boolean) => void): void {
+  exec('tasklist /FI "IMAGENAME eq vrserver.exe" /FO CSV /NH', { timeout: 2000, windowsHide: true }, (err, stdout) => {
     cb(!err && stdout.toLowerCase().includes('vrserver.exe'))
   })
 }
@@ -45,6 +46,7 @@ function scheduleRetry(): void {
 export function startAutoConnect(mainWindow: BrowserWindow): void {
   savedMainWindow = mainWindow
   userStopped = false
+
   if (!fs.existsSync(helperExe)) {
     mainWindow.webContents.send('vr:statusChanged', {
       status: 'error',
@@ -52,6 +54,12 @@ export function startAutoConnect(mainWindow: BrowserWindow): void {
     })
     return
   }
+
+  if (!readPrefs().vrEnabled) {
+    mainWindow.webContents.send('vr:statusChanged', { status: 'off' })
+    return
+  }
+
   checkSteamVr((running) => {
     if (running) {
       startVr(mainWindow)
@@ -65,6 +73,7 @@ export function startAutoConnect(mainWindow: BrowserWindow): void {
 export function reconnectVr(): void {
   if (!savedMainWindow) return
   userStopped = false
+  writePrefs({ vrEnabled: true })
   if (retryTimer) { clearInterval(retryTimer); retryTimer = null }
   if (helperProcess) return  // already running
   checkSteamVr((running) => {
@@ -157,6 +166,7 @@ export function startVr(mainWindow: BrowserWindow): void {
 
 export function stopVr(): void {
   userStopped = true
+  writePrefs({ vrEnabled: false })
   if (retryTimer) { clearInterval(retryTimer); retryTimer = null }
   if (!helperProcess) {
     savedMainWindow?.webContents.send('vr:statusChanged', { status: 'off' })

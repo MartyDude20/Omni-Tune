@@ -152,9 +152,11 @@ export default function GameList(): JSX.Element {
   const [newGameName, setNewGameName] = useState('')
   const newInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { window.api.scanProfiles().then(setProfiles) }, [])
+  useEffect(() => { window.api.scanProfiles().then(setProfiles).catch(() => {}) }, [])
   useEffect(() => {
-    const unsub = window.api.onProfilesChanged(async () => setProfiles(await window.api.scanProfiles()))
+    const unsub = window.api.onProfilesChanged(async () => {
+      window.api.scanProfiles().then(setProfiles).catch(() => {})
+    })
     return unsub
   }, [])
   useEffect(() => { if (newModal) { newInputRef.current?.focus(); setNewGameName('') } }, [newModal])
@@ -301,7 +303,18 @@ export default function GameList(): JSX.Element {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {isEmpty && (
+        {isEmpty && profiles.length === 0 && !search && filterMode === 'all' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, padding: '0 40px', textAlign: 'center' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>No game profiles found</p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
+              Make sure the Virtuix OmniConnect software is installed.<br />
+              Profiles are read from:<br />
+              <code style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'monospace' }}>C:\ProgramData\Virtuix\OmniConnect\GameProfile</code>
+            </p>
+          </div>
+        )}
+        {isEmpty && (profiles.length > 0 || search || filterMode !== 'all') && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
             <p style={{ fontSize: 14, color: 'var(--muted)' }}>No games found</p>
           </div>

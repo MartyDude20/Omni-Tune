@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import logo256 from './assets/Logo256.png'
+import FirstRunWizard from './components/FirstRunWizard'
+import WhatsNewModal from './components/WhatsNewModal'
 import Sidebar from './components/Sidebar'
 import GameList from './components/GameList'
 import ProfileEditor from './components/ProfileEditor'
@@ -164,7 +166,7 @@ function SettingsView(): JSX.Element {
               <img src={logo256} alt="OmniTune" style={{ width: 44, height: 44, borderRadius: 12 }} />
               <div>
                 <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>OmniTune</p>
-                <p style={{ fontSize: 13, color: 'var(--muted)' }}>v1.0.0</p>
+                <p style={{ fontSize: 13, color: 'var(--muted)' }}>v1.0.1</p>
               </div>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
@@ -222,12 +224,42 @@ function DesktopApp(): JSX.Element {
 }
 
 function App(): JSX.Element {
+  const [showWizard, setShowWizard] = useState(false)
+  const [wizardChecked, setWizardChecked] = useState(false)
+  const [whatsNew, setWhatsNew] = useState<{ version: string; notes: string[] } | null>(null)
+
+  useEffect(() => {
+    if (isVr) { setWizardChecked(true); return }
+    window.api.getFirstRun()
+      .then(isFirst => { setShowWizard(isFirst); setWizardChecked(true) })
+      .catch(() => setWizardChecked(true))
+  }, [])
+
+  useEffect(() => {
+    if (isVr) return
+    window.api.getWhatsNew().then(data => { if (data) setWhatsNew(data) }).catch(() => {})
+  }, [])
+
+  if (!wizardChecked) {
+    return <div style={{ height: '100vh', background: 'var(--bg)' }} />
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       {!isVr && (
         <div style={{ height: 40, background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexShrink: 0, WebkitAppRegion: 'drag' } as React.CSSProperties} />
       )}
       {isVr ? <VrEditor /> : <DesktopApp />}
+      {showWizard && !isVr && (
+        <FirstRunWizard onComplete={() => setShowWizard(false)} />
+      )}
+      {whatsNew && !isVr && (
+        <WhatsNewModal
+          version={whatsNew.version}
+          notes={whatsNew.notes}
+          onDismiss={() => { window.api.dismissWhatsNew().catch(() => {}); setWhatsNew(null) }}
+        />
+      )}
     </div>
   )
 }

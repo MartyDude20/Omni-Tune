@@ -1,0 +1,37 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: omni-profile-editor
+
+      - name: Build
+        run: npm run build
+        working-directory: omni-profile-editor
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: OmniTune ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          files: |
+            omni-profile-editor/dist/*.exe
+            omni-profile-editor/dist/*.zip
+            omni-profile-editor/dist/latest.yml
