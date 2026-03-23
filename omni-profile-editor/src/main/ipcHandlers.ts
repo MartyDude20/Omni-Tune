@@ -17,6 +17,11 @@ import { isOmniConnectInstalled } from './profileManager'
 import { checkSteamVr } from './vrOverlay'
 
 const WHATS_NEW: Record<string, string[]> = {
+  '1.0.2': [
+    'Fixed: Only one instance of OmniTune can run at a time',
+    'Fixed: Version number now reflects the actual build',
+    'Added: Error toasts for save, reset, delete, import, and export failures',
+  ],
   '1.0.1': [
     'Fixed: Switching games now prompts if you have unsaved changes',
     'Fixed: Parameter number inputs are clamped to valid ranges',
@@ -28,7 +33,6 @@ const WHATS_NEW: Record<string, string[]> = {
     'Added: Drag-and-drop .txt import onto the profile editor',
     'Added: First-run setup wizard',
     'Added: NSIS installer with desktop shortcut and uninstaller',
-    'Added: Auto-updater notifies when a new version is ready',
     'Added: Helpful message when OmniConnect is not installed',
     'Added: Overlay correctly loads the running game when started mid-session',
   ],
@@ -90,6 +94,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     shell.openExternal(url)
   })
 
+  ipcMain.handle('app:getVersion', () => app.getVersion())
   ipcMain.handle('app:getFirstRun', () => readPrefs().firstRun)
   ipcMain.handle('app:completeFirstRun', () => writePrefs({ firstRun: false }))
   ipcMain.handle('app:checkOmniConnect', () => isOmniConnectInstalled())

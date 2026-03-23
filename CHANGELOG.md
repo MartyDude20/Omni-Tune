@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.2
+
+### Bug Fixes
+- Only one instance of OmniTune can run at a time — launching a second copy focuses the existing window instead
+- Version number in the sidebar and settings now reflects the actual build instead of being hardcoded
+
+### New
+- Error toasts — save, reset, delete, import, and export failures now show a dismissible message instead of failing silently
+
+---
+
 ## v1.0.1
 
 ### Bug Fixes

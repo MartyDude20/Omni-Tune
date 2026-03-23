@@ -70,6 +70,16 @@ function createWindow(): void {
   win.webContents.on('did-finish-load', () => startAutoConnect(win))
 }
 
+// Single-instance lock — if another instance is already running, focus it and quit this one
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) { win.show(); win.focus() }
+  })
+}
+
 app.whenReady().then(() => {
   createWindow()
 

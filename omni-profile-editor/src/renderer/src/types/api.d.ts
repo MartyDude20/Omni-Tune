@@ -65,6 +65,7 @@ declare global {
       onVrStatus:     (cb: (payload: VrStatusPayload) => void)      => () => void
       onVrAppChanged: (cb: (payload: VrAppPayload) => void)         => () => void
 
+      getVersion:        ()                => Promise<string>
       getAutoStart:      ()                => Promise<boolean>
       setAutoStart:      (enabled: boolean) => Promise<void>
       openExternal:      (url: string)     => Promise<void>

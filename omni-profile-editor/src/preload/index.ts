@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('api', {
   getAutoStart:      ()                => ipcRenderer.invoke('app:getAutoStart'),
   setAutoStart:      (enabled: boolean) => ipcRenderer.invoke('app:setAutoStart', { enabled }),
   openExternal:      (url: string)     => ipcRenderer.invoke('app:openExternal', { url }),
+  getVersion:        ()                => ipcRenderer.invoke('app:getVersion'),
   getFirstRun:       ()                => ipcRenderer.invoke('app:getFirstRun'),
   completeFirstRun:  ()                => ipcRenderer.invoke('app:completeFirstRun'),
   checkOmniConnect:  ()                => ipcRenderer.invoke('app:checkOmniConnect'),

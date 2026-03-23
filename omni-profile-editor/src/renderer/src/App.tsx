@@ -7,7 +7,9 @@ import GameList from './components/GameList'
 import ProfileEditor from './components/ProfileEditor'
 import VrEditor from './components/VrEditor'
 import VrButton from './components/VrButton'
+import Toast from './components/Toast'
 import { useAppStore } from './store/useAppStore'
+import { useToastStore } from './store/useToastStore'
 import { THEMES } from './themes'
 
 const isVr = new URLSearchParams(window.location.search).get('vr') === '1'
@@ -40,9 +42,11 @@ function ToggleRow({ label, sub, checked, onChange }: { label: string; sub: stri
 function SettingsView(): JSX.Element {
   const { themeId, setTheme, overlayWidth, setOverlayWidth } = useAppStore()
   const [autoStart, setAutoStartLocal] = useState(false)
+  const [version, setVersion] = useState('')
 
   useEffect(() => {
     window.api.getAutoStart().then(setAutoStartLocal).catch(() => {})
+    window.api.getVersion().then(setVersion).catch(() => {})
   }, [])
 
   async function handleAutoStart(enabled: boolean): Promise<void> {
@@ -166,7 +170,7 @@ function SettingsView(): JSX.Element {
               <img src={logo256} alt="OmniTune" style={{ width: 44, height: 44, borderRadius: 12 }} />
               <div>
                 <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>OmniTune</p>
-                <p style={{ fontSize: 13, color: 'var(--muted)' }}>v1.0.1</p>
+                <p style={{ fontSize: 13, color: 'var(--muted)' }}>{version ? `v${version}` : ''}</p>
               </div>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
@@ -190,6 +194,7 @@ function SettingsView(): JSX.Element {
 
 function DesktopApp(): JSX.Element {
   const { activeTab, save, undo, redo } = useAppStore()
+  const { addToast } = useToastStore()
 
   // Receive live param updates from VR overlay
   useEffect(() => {
@@ -202,13 +207,13 @@ function DesktopApp(): JSX.Element {
   // Global keyboard shortcuts
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent): void {
-      if (e.ctrlKey && e.key === 's') { e.preventDefault(); save() }
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); save().catch(() => addToast('Failed to save profile.')) }
       if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
       if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [save, undo, redo])
+  }, [save, undo, redo, addToast])
 
   const mainContent =
     activeTab === 'library' ? <GameList /> :
@@ -260,6 +265,7 @@ function App(): JSX.Element {
           onDismiss={() => { window.api.dismissWhatsNew().catch(() => {}); setWhatsNew(null) }}
         />
       )}
+      <Toast />
     </div>
   )
 }

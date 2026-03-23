@@ -75,6 +75,8 @@ function ActiveGamePanel(): JSX.Element {
 
 export default function Sidebar(): JSX.Element {
   const { activeTab, setActiveTab } = useAppStore()
+  const [version, setVersion] = useState('')
+  useEffect(() => { window.api.getVersion().then(setVersion).catch(() => {}) }, [])
 
   useEffect(() => {
     const us = window.api.onVrStatus((p) => {
@@ -142,7 +144,7 @@ export default function Sidebar(): JSX.Element {
 
       {/* Version */}
       <div style={{ padding: '10px 20px 14px', borderTop: '1px solid var(--border)' }}>
-        <p style={{ fontSize: 11, color: 'var(--icon)' }}>v1.0.0</p>
+        <p style={{ fontSize: 11, color: 'var(--icon)' }}>{version ? `v${version}` : ''}</p>
       </div>
     </div>
   )

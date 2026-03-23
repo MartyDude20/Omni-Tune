@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { useToastStore } from '../store/useToastStore'
 import { PARAMS } from '../params'
 import type { Profile } from '../types/api'
 import PresetsPanel from './PresetsPanel'
@@ -13,6 +14,7 @@ export default function ProfileEditor(): JSX.Element {
     undo, redo, toggleAutoSave, notes, setNote,
   } = useAppStore()
 
+  const { addToast } = useToastStore()
   const [importModal, setImportModal] = useState(false)
   const [pendingImport, setPendingImport] = useState<{ profile: Profile } | null>(null)
   const [importAppId, setImportAppId] = useState('')
@@ -43,27 +45,43 @@ export default function ProfileEditor(): JSX.Element {
   const paramVals = { multiplier: editedProfile.multiplier, minspeed: editedProfile.minspeed, minrange: editedProfile.minrange, maxrange: editedProfile.maxrange, maxspeed: editedProfile.maxspeed, omnicoupling: editedProfile.omnicoupling }
 
   async function handleImport(): Promise<void> {
-    const filePath = await window.api.openFileDialog({ filters: [{ name: 'Profile', extensions: ['txt'] }] })
-    if (!filePath) return
-    const result = await window.api.importProfile(filePath)
-    for (const k of Object.keys(result.profile) as (keyof Profile)[]) {
-      if (k !== 'game') updateParam(k, result.profile[k] as number)
+    try {
+      const filePath = await window.api.openFileDialog({ filters: [{ name: 'Profile', extensions: ['txt'] }] })
+      if (!filePath) return
+      const result = await window.api.importProfile(filePath)
+      for (const k of Object.keys(result.profile) as (keyof Profile)[]) {
+        if (k !== 'game') updateParam(k, result.profile[k] as number)
+      }
+    } catch {
+      addToast('Failed to import profile.')
     }
   }
   async function handleImportConfirm(): Promise<void> {
     const appId = importAppId.trim()
     if (!appId || !pendingImport) return
-    await window.api.saveProfile(appId, pendingImport.profile)
-    setPendingImport(null); setImportAppId(''); setImportModal(false)
+    try {
+      await window.api.saveProfile(appId, pendingImport.profile)
+      setPendingImport(null); setImportAppId(''); setImportModal(false)
+    } catch {
+      addToast('Failed to save imported profile.')
+    }
   }
   async function handleExport(): Promise<void> {
     if (!selectedAppId) return
-    const p = await window.api.saveFileDialog({ filters: [{ name: 'Profile', extensions: ['txt'] }], defaultPath: `profile_${selectedAppId}.txt` })
-    if (p) await window.api.exportOne(selectedAppId, p)
+    try {
+      const p = await window.api.saveFileDialog({ filters: [{ name: 'Profile', extensions: ['txt'] }], defaultPath: `profile_${selectedAppId}.txt` })
+      if (p) await window.api.exportOne(selectedAppId, p)
+    } catch {
+      addToast('Failed to export profile.')
+    }
   }
   async function handleExportAll(): Promise<void> {
-    const p = await window.api.saveFileDialog({ filters: [{ name: 'ZIP Archive', extensions: ['zip'] }], defaultPath: 'omni-custom-profiles.zip' })
-    if (p) await window.api.exportAll(p)
+    try {
+      const p = await window.api.saveFileDialog({ filters: [{ name: 'ZIP Archive', extensions: ['zip'] }], defaultPath: 'omni-custom-profiles.zip' })
+      if (p) await window.api.exportAll(p)
+    } catch {
+      addToast('Failed to export profiles.')
+    }
   }
   async function handleDrop(e: React.DragEvent<HTMLDivElement>): Promise<void> {
     e.preventDefault()
@@ -72,15 +90,23 @@ export default function ProfileEditor(): JSX.Element {
     if (!file || !file.name.endsWith('.txt')) return
     const filePath = (file as File & { path: string }).path
     if (!filePath) return
-    const result = await window.api.importProfile(filePath)
-    for (const k of Object.keys(result.profile) as (keyof Profile)[]) {
-      if (k !== 'game') updateParam(k, result.profile[k] as number)
+    try {
+      const result = await window.api.importProfile(filePath)
+      for (const k of Object.keys(result.profile) as (keyof Profile)[]) {
+        if (k !== 'game') updateParam(k, result.profile[k] as number)
+      }
+    } catch {
+      addToast('Failed to import dropped file.')
     }
   }
   async function handleDelete(): Promise<void> {
     if (!isCustom) return
     if (!window.confirm(`Delete custom profile for "${gameName}"? The official profile (if any) will be used instead.`)) return
-    await deleteCustomProfile()
+    try {
+      await deleteCustomProfile()
+    } catch {
+      addToast('Failed to delete profile.')
+    }
   }
 
   const copyFiltered = profiles.filter(p => p.appId !== selectedAppId && (p.gameName.toLowerCase().includes(copySearch.toLowerCase()) || p.appId.includes(copySearch)))
@@ -138,13 +164,13 @@ export default function ProfileEditor(): JSX.Element {
               style={{ padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: `1px solid ${autoSave ? 'var(--accent)' : 'var(--border)'}`, background: autoSave ? 'var(--accent-b)' : 'var(--surface)', color: autoSave ? 'var(--accent-t)' : 'var(--text2)' }}>
               {autoSave ? '● Auto-save' : 'Auto-save'}
             </button>
-            <button onClick={() => { if (window.confirm('Reset all parameters to the official values? This cannot be undone.')) reset() }}
+            <button onClick={() => { if (window.confirm('Reset all parameters to the official values? This cannot be undone.')) reset().catch(() => addToast('Failed to reset profile.')) }}
               style={{ padding: '9px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--icon)'; (e.currentTarget as HTMLElement).style.color = 'var(--text)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text2)' }}>
               Reset
             </button>
-            <button onClick={save} disabled={!isDirty}
+            <button onClick={() => save().catch(() => addToast('Failed to save profile.'))} disabled={!isDirty}
               style={{ padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: isDirty ? 'pointer' : 'not-allowed', border: 'none', background: isDirty ? 'var(--accent)' : 'var(--border)', color: isDirty ? '#fff' : 'var(--muted)', boxShadow: isDirty ? '0 4px 20px var(--glow)' : 'none', transition: 'all 0.15s' }}>
               Save
             </button>
