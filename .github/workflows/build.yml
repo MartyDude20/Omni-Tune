@@ -36,4 +36,3 @@ jobs:
           files: |
             omni-profile-editor/dist/*.exe
             omni-profile-editor/dist/*.zip
-            omni-profile-editor/dist/latest.yml

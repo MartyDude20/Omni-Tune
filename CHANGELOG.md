@@ -17,7 +17,6 @@
 - First-run setup wizard checks OmniConnect and SteamVR on first launch
 - NSIS installer with desktop shortcut, Start Menu entry, and uninstaller
 - Portable `.zip` build still available alongside the installer
-- Auto-updater notifies when a new version is ready to install
 - Helpful message when OmniConnect is not installed
 - VR overlay correctly loads the running game when started mid-session
 
