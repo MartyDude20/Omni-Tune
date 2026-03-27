@@ -17,6 +17,11 @@ import { isOmniConnectInstalled } from './profileManager'
 import { checkSteamVr } from './vrOverlay'
 
 const WHATS_NEW: Record<string, string[]> = {
+  '1.0.3': [
+    'Fixed: Game name now correctly written to profile .txt files (required by the Omni One driver)',
+    'Fixed: Game library now shows real Steam names instead of internal keys',
+    'New: Controller Binding Wizard — fix zero-movement issues for games missing Omni One bindings',
+  ],
   '1.0.2': [
     'Fixed: Only one instance of OmniTune can run at a time',
     'Fixed: Version number now reflects the actual build',

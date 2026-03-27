@@ -66,7 +66,8 @@ export function parseProfile(line: string): Profile {
   const map: Record<string, string> = {}
   for (let i = 0; i < tokens.length - 1; i++) {
     if (tokens[i].startsWith('-')) {
-      map[tokens[i].slice(1)] = tokens[i + 1]
+      const val = tokens[i + 1]
+      if (!val.startsWith('-')) map[tokens[i].slice(1)] = val
     }
   }
   return {
@@ -142,6 +143,19 @@ export function getSteamGameName(appId: string): string | null {
 export function scanProfiles(): ProfileEntry[] {
   fs.mkdirSync(CUSTOM, { recursive: true })
 
+  // Hoist Steam lookup so registry is queried once for the whole scan
+  const steamPath = getSteamInstallPath()
+  const steamLibs = steamPath ? getSteamLibraryFolders(steamPath) : []
+  function steamNameFor(appId: string): string | null {
+    for (const lib of steamLibs) {
+      const acf = path.join(lib, `appmanifest_${appId}.acf`)
+      if (!fs.existsSync(acf)) continue
+      const m = fs.readFileSync(acf, 'utf-8').match(/"name"\s+"([^"]+)"/)
+      if (m) return m[1]
+    }
+    return null
+  }
+
   const officialFiles = fs.existsSync(OFFICIAL)
     ? fs.readdirSync(OFFICIAL).filter(f => f.match(/^profile_(\d+)\.txt$/))
     : []
@@ -171,23 +185,28 @@ export function scanProfiles(): ProfileEntry[] {
     const officialPath = officialMap.get(appId) ?? null
     const customPath   = customMap.get(appId)   ?? null
 
-    const activeLine = customPath  ? fs.readFileSync(customPath,   'utf-8').trim()
-                     : officialPath ? fs.readFileSync(officialPath, 'utf-8').trim()
-                     : ''
+    const activeLine   = customPath   ? fs.readFileSync(customPath,   'utf-8').trim()
+                       : officialPath ? fs.readFileSync(officialPath, 'utf-8').trim()
+                       : ''
     const officialLine = officialPath ? fs.readFileSync(officialPath, 'utf-8').trim() : null
 
     const profile         = activeLine   ? parseProfile(activeLine)   : { ...defaults, game: '' }
     const officialProfile = officialLine ? parseProfile(officialLine) : { ...defaults, game: '' }
 
-    const rawGame = profile.game || officialProfile.game
-    const gameName = rawGame ? formatGameName(rawGame) : `Unknown Game (${appId})`
+    // Always prefer Steam name for display; fall back to formatted key
+    const steamName = steamNameFor(appId)
+    const rawGame   = profile.game || officialProfile.game
+    const gameName  = steamName ?? (rawGame ? formatGameName(rawGame) : `Unknown Game (${appId})`)
+
+    const gameKey      = rawGame || (steamName ? steamName.replace(/[^a-zA-Z0-9:\-'&[\]]/g, '') : appId)
+    const finalProfile = profile.game ? profile : { ...profile, game: gameKey }
 
     entries.push({
       appId,
       gameName,
       officialPath,
       customPath,
-      profile,
+      profile: finalProfile,
       officialProfile,
       isCustom: customPath !== null,
     })
@@ -205,15 +224,16 @@ export function loadProfileForAppId(appId: string): ProfileEntry {
 
   if (!hasOfficial && !hasCustom) {
     const steamName = getSteamGameName(appId)
-    const gameName  = steamName ?? `Unknown Game (${appId})`
+    const gameName  = steamName ?? `Unknown Game (${appId})`  // Steam name is always the display name
+    const gameKey   = steamName ? steamName.replace(/[^a-zA-Z0-9:\-'&[\]]/g, '') : appId
     const defaults  = readDefaultProfile()
     return {
       appId,
       gameName,
       officialPath: null,
       customPath:   null,
-      profile:         { ...defaults, game: '' },
-      officialProfile: { ...defaults, game: '' },
+      profile:         { ...defaults, game: gameKey },
+      officialProfile: { ...defaults, game: gameKey },
       isCustom: false,
     }
   }
@@ -227,15 +247,21 @@ export function loadProfileForAppId(appId: string): ProfileEntry {
   const profile         = activeLine   ? parseProfile(activeLine)   : { ...defaults, game: '' }
   const officialProfile = officialLine ? parseProfile(officialLine) : { ...defaults, game: '' }
 
-  const rawGame  = profile.game || officialProfile.game
-  const gameName = rawGame ? formatGameName(rawGame) : `Unknown Game (${appId})`
+  const rawGame    = profile.game || officialProfile.game
+  const steamName2 = getSteamGameName(appId)
+  const gameName   = steamName2 ?? (rawGame ? formatGameName(rawGame) : `Unknown Game (${appId})`)
+
+  // If game field is blank (broken file), fill it so the next save writes it correctly
+  // Priority: official profile key (exact Virtuix format) → Steam name → appId
+  const gameKey2 = officialProfile.game || (steamName2 ? steamName2.replace(/[^a-zA-Z0-9:\-'&[\]]/g, '') : appId)
+  const finalProfile = profile.game ? profile : { ...profile, game: gameKey2 }
 
   return {
     appId,
     gameName,
     officialPath: hasOfficial ? officialPath : null,
     customPath:   hasCustom   ? customPath   : null,
-    profile,
+    profile:      finalProfile,
     officialProfile,
     isCustom: hasCustom,
   }
@@ -244,10 +270,20 @@ export function loadProfileForAppId(appId: string): ProfileEntry {
 const suppressSet = new Set<string>()
 
 export function saveCustomProfile(appId: string, p: Profile): void {
+  let game = p.game
+  if (!game) {
+    // 1. Use official profile's key verbatim (exact Virtuix format)
+    const officialFile = path.join(OFFICIAL, `profile_${appId}.txt`)
+    if (fs.existsSync(officialFile)) {
+      game = parseProfile(fs.readFileSync(officialFile, 'utf-8').trim()).game
+    }
+    // 2. Derive from Steam name (spaces only removed, matching Virtuix convention)
+    if (!game) game = getSteamGameName(appId)?.replace(/[^a-zA-Z0-9:\-'&[\]]/g, '') || appId
+  }
   const dest = path.normalize(path.join(CUSTOM, `profile_${appId}.txt`))
   suppressSet.add(dest)
   fs.mkdirSync(CUSTOM, { recursive: true })
-  fs.writeFileSync(dest, serializeProfile(p))
+  fs.writeFileSync(dest, serializeProfile({ ...p, game }))
 }
 
 export function resetProfile(appId: string): void {

@@ -1,6 +1,6 @@
 {
   "name": "omnitune",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Virtuix Omni One game profile tuner",
   "main": "./out/main/index.js",
   "scripts": {

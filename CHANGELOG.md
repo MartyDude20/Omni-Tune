@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.0.3
+
+### Bug Fixes
+- Custom profiles now correctly write the game name into the `-game` field of the `.txt` file — the Omni One driver requires this
+- Fixed parser reading the next flag as the game name when `-game` had no value (e.g. showing "-multiplier" as the game name)
+- Game library display names now show the real Steam name (e.g. "Arizona Sunshine® 2") instead of the sanitized internal key
+
+### Improvements
+- Game key format now matches Virtuix's exact convention — keeps colons, hyphens, apostrophes, brackets, and ampersands; only strips spaces and invalid symbols
+- When an official Virtuix profile exists, its game key is used verbatim for custom profiles (1:1 match)
+
+### New
+- Controller Binding Wizard — fixes Omni One compatibility for games with no movement. Detects UEVR mods, legacy input games, and modern SteamVR Input games. Accessible via "Fix Controller Bindings" in the profile editor
+
+---
+
 ## v1.0.2
 
 ### Bug Fixes
